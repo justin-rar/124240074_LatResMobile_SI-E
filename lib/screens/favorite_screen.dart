@@ -4,9 +4,18 @@ import '../models/article_model.dart';
 import '../services/favorite_service.dart';
 import 'detail_screen.dart';
 
+/// Halaman Daftar Favorit (Favourite Screen).
+/// Memenuhi ketentuan soal nomor 4 (Fitur Favourite):
+/// 1. "Halaman yang berisi data-data yang difavoritkan oleh user, terlepas itu news, blog, ataupun report."
+/// 2. "Semua data yang dinyatakan sebagai favourite tercantum di halaman ini."
+/// 3. "List data favourite terupdate terlepas dilakukannya perubahan di halaman favourite maupun dari halaman detil."
+///
+/// Kunci utama reaktivitas di sini adalah penggunaan `ValueListenableBuilder` (Modul VI),
+/// yang memantau perubahan data pada Box Hive secara real-time tanpa perlu me-reload manual.
 class FavoriteScreen extends StatelessWidget {
   const FavoriteScreen({super.key});
 
+  /// Widget helper untuk thumbnail gambar dengan exception handling
   Widget _buildThumbnail(String imageUrl) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -17,6 +26,7 @@ class FavoriteScreen extends StatelessWidget {
           imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
+            // Tampilan jika gambar gagal dimuat
             return Container(
               width: 70,
               height: 70,
@@ -53,12 +63,16 @@ class FavoriteScreen extends StatelessWidget {
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
       ),
-      // Menggunakan ValueListenableBuilder agar daftar otomatis terupdate secara reaktif
+      // ValueListenableBuilder: Listener reaktif ke box Hive 'favorites_box'
+      // Setiap kali ada penambahan atau penghapusan data di Hive (baik dari sini atau DetailScreen),
+      // builder ini akan otomatis dipanggil ulang (rebuild).
       body: ValueListenableBuilder<Box>(
         valueListenable: FavoriteService.listenable(),
         builder: (context, Box box, child) {
+          // Ambil semua daftar item yang sedang ada di dalam box
           final List<ArticleModel> favorites = FavoriteService.getAllFavorites();
 
+          // 1. Tampilan jika belum ada data favorit sama sekali (Empty State)
           if (favorites.isEmpty) {
             return Center(
               child: Padding(
@@ -94,6 +108,7 @@ class FavoriteScreen extends StatelessWidget {
             );
           }
 
+          // 2. Tampilan daftar item favorit yang tersimpan
           return ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             itemCount: favorites.length,
@@ -107,6 +122,7 @@ class FavoriteScreen extends StatelessWidget {
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(10),
+                  // Klik kartu untuk membuka detail artikel
                   onTap: () {
                     Navigator.push(
                       context,
@@ -123,11 +139,13 @@ class FavoriteScreen extends StatelessWidget {
                         // Thumbnail gambar
                         _buildThumbnail(article.imageUrl),
                         const SizedBox(width: 12),
-                        // Konten judul, author, kategori
+
+                        // Informasi data favorit: Kategori, Judul, Author
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Badge Kategori (ARTICLES / BLOGS / REPORTS)
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 6,
@@ -147,6 +165,8 @@ class FavoriteScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 4),
+
+                              // Judul data favorit
                               Text(
                                 article.title,
                                 maxLines: 2,
@@ -158,6 +178,8 @@ class FavoriteScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 4),
+
+                              // Author / Sumber
                               Text(
                                 'Oleh: ${article.authorFormatted}',
                                 maxLines: 1,
@@ -170,7 +192,8 @@ class FavoriteScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        // Tombol hapus dari favorit
+
+                        // Tombol Hapus dari Favorit langsung dari halaman ini
                         IconButton(
                           icon: const Icon(
                             Icons.delete_outline,
@@ -178,6 +201,7 @@ class FavoriteScreen extends StatelessWidget {
                           ),
                           tooltip: 'Hapus dari Favorit',
                           onPressed: () async {
+                            // Hapus item dari Hive berdasarkan ID
                             await FavoriteService.removeFavorite(article.id);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(

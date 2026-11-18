@@ -3,13 +3,26 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/article_model.dart';
 import '../services/favorite_service.dart';
 
+/// Halaman Detail Informasi (News/Blog/Report).
+/// Memenuhi ketentuan soal:
+/// 1. "Wajib menampilkan gambar (lengkap dengan exception handling)"
+/// 2. "Wajib menampilkan judul data"
+/// 3. "Wajib menampilkan author data"
+/// 4. "Wajib menampilkan tanggal publish"
+/// 5. "Wajib menampilkan summary data"
+/// 6. "Terdapat tombol yang akan mengarahkan (launch url) ke situs resmi dari berita"
+/// 7. "Terdapat tombol untuk menambahkan data sebagai favourite yang nantinya akan muncul di list favourite"
 class DetailScreen extends StatelessWidget {
   final ArticleModel article;
 
   const DetailScreen({super.key, required this.article});
 
+  /// Fungsi untuk membuka tautan situs web resmi menggunakan package `url_launcher`.
+  /// Menggunakan mode `LaunchMode.externalApplication` agar dibuka di browser bawaan perangkat (Chrome/Safari).
   Future<void> _openOfficialWebsite(BuildContext context) async {
     final urlStr = article.url.trim();
+
+    // Validasi URL tidak kosong
     if (urlStr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -23,10 +36,13 @@ class DetailScreen extends StatelessWidget {
 
     final uri = Uri.parse(urlStr);
     try {
+      // Membuka URL di browser eksternal
       final launched = await launchUrl(
         uri,
         mode: LaunchMode.externalApplication,
       );
+
+      // Jika gagal meluncurkan URL
       if (!launched && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -37,6 +53,7 @@ class DetailScreen extends StatelessWidget {
         );
       }
     } catch (e) {
+      // Menangani error exception jika URL tidak valid
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -58,10 +75,11 @@ class DetailScreen extends StatelessWidget {
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
         actions: [
-          // Reaktif tombol favorit di AppBar menggunakan ValueListenableBuilder
+          // Tombol toggle favorit di AppBar yang REAKTIF menggunakan ValueListenableBuilder (Modul VI)
           ValueListenableBuilder(
             valueListenable: FavoriteService.listenable(),
             builder: (context, box, child) {
+              // Cek apakah item ini sudah difavoritkan
               final isFav = FavoriteService.isFavorite(article.id);
               return IconButton(
                 icon: Icon(
@@ -70,6 +88,7 @@ class DetailScreen extends StatelessWidget {
                 ),
                 tooltip: isFav ? 'Hapus dari Favorit' : 'Tambah ke Favorit',
                 onPressed: () async {
+                  // Toggle status favorit di Hive
                   final added = await FavoriteService.toggleFavorite(article);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -96,13 +115,14 @@ class DetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Gambar utama dengan Exception Handling
+            // 1. Gambar utama dengan Exception Handling (errorBuilder)
             SizedBox(
               width: double.infinity,
               height: 250,
               child: Image.network(
                 article.imageUrl,
                 fit: BoxFit.cover,
+                // Exception handling jika gambar gagal dimuat
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     color: Colors.grey.shade300,
@@ -128,6 +148,7 @@ class DetailScreen extends StatelessWidget {
                     ),
                   );
                 },
+                // Animasi loading saat proses download gambar
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return Container(
@@ -145,7 +166,7 @@ class DetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Kategori badge
+                  // Label Kategori (ARTICLES / BLOGS / REPORTS)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -168,7 +189,7 @@ class DetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // 2. Judul data
+                  // 2. Wajib: Menampilkan Judul Data
                   Text(
                     article.title,
                     style: const TextStyle(
@@ -179,7 +200,7 @@ class DetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Info Card: Author & Publish Date
+                  // Kartu Info: Author dan Tanggal Publikasi
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -189,7 +210,7 @@ class DetailScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        // 3. Author data
+                        // 3. Wajib: Menampilkan Author Data
                         Row(
                           children: [
                             Icon(
@@ -218,7 +239,8 @@ class DetailScreen extends StatelessWidget {
                           ],
                         ),
                         const Divider(height: 16),
-                        // 4. Tanggal publish data
+
+                        // 4. Wajib: Menampilkan Tanggal Publish Data
                         Row(
                           children: [
                             Icon(
@@ -250,7 +272,7 @@ class DetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 5. Summary / Ringkasan data
+                  // 5. Wajib: Menampilkan Summary / Ringkasan Data
                   const Text(
                     'Ringkasan Berita',
                     style: TextStyle(
@@ -271,7 +293,8 @@ class DetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
 
-                  // 6. Tombol Toggle Favourite di halaman detail
+                  // 6. Wajib: Tombol untuk Menambahkan/Menghapus Data sebagai Favourite
+                  // Dibuat reaktif dengan ValueListenableBuilder (Hive)
                   ValueListenableBuilder(
                     valueListenable: FavoriteService.listenable(),
                     builder: (context, box, child) {
@@ -331,7 +354,7 @@ class DetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // 7. Tombol Launch URL ke situs resmi
+                  // 7. Wajib: Tombol Launch URL untuk Mengarahkan ke Situs Resmi Berita
                   SizedBox(
                     width: double.infinity,
                     height: 48,

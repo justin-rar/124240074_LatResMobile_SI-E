@@ -3,9 +3,15 @@ import '../models/article_model.dart';
 import '../services/api_service.dart';
 import 'detail_screen.dart';
 
+/// Halaman List Data (Menampilkan daftar News, Blogs, atau Reports).
+/// Memenuhi ketentuan soal:
+/// 1. "Wajib menampilkan judul dari data"
+/// 2. "Wajib menampilkan gambar sebagai leading (thumbnail) & memberikan exception handling apabila gambarnya tidak muncul"
+/// 3. "Wajib memunculkan author dari data"
+/// 4. "Fitur Filter berupa chip untuk memfilter list data berdasarkan author dari tiap data"
 class ListScreen extends StatefulWidget {
-  final String endpoint; // 'articles', 'blogs', or 'reports'
-  final String title;
+  final String endpoint; // Endpoint API: 'articles', 'blogs', atau 'reports'
+  final String title;    // Judul AppBar: 'News', 'Blogs', atau 'Reports'
 
   const ListScreen({
     super.key,
@@ -18,19 +24,27 @@ class ListScreen extends StatefulWidget {
 }
 
 class _ListScreenState extends State<ListScreen> {
+  // Menyimpan semua data asli dari API
   List<ArticleModel> _allArticles = [];
+  // Menyimpan data hasil filter yang ditampilkan ke UI
   List<ArticleModel> _filteredArticles = [];
+  // Daftar semua author unik untuk dijadikan pilihan FilterChip
   List<String> _authorList = [];
+  // Author yang sedang aktif dipilih (default: 'All' / Semua)
   String _selectedAuthor = 'All';
+
+  // State untuk mengontrol UI loading dan penanganan error
   bool _isLoading = true;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
+    // Memanggil API saat pertama kali halaman dibuka
     _fetchData();
   }
 
+  /// Fungsi untuk mengambil data dari REST API via ApiService
   Future<void> _fetchData() async {
     setState(() {
       _isLoading = true;
@@ -38,12 +52,15 @@ class _ListScreenState extends State<ListScreen> {
     });
 
     try {
+      // 1. Ambil data mentah (JSON List) dari API
       final rawList = await ApiService.getDataList(widget.endpoint);
+
+      // 2. Mapping JSON ke List of ArticleModel
       final List<ArticleModel> loaded = rawList
           .map((item) => ArticleModel.fromMap(item, category: widget.endpoint))
           .toList();
 
-      // Kumpulkan daftar author unik
+      // 3. Kumpulkan semua nama author secara unik menggunakan Set
       final Set<String> uniqueAuthors = {};
       for (var a in loaded) {
         final author = a.authorFormatted.trim();
@@ -54,14 +71,16 @@ class _ListScreenState extends State<ListScreen> {
 
       final sortedAuthors = uniqueAuthors.toList()..sort();
 
+      // 4. Update state tampilan
       setState(() {
         _allArticles = loaded;
-        _authorList = ['All', ...sortedAuthors];
+        _authorList = ['All', ...sortedAuthors]; // 'All' di posisi pertama
         _selectedAuthor = 'All';
         _filteredArticles = loaded;
         _isLoading = false;
       });
     } catch (e) {
+      // Jika request API gagal (misal tidak ada koneksi internet)
       setState(() {
         _isLoading = false;
         _errorMessage = e.toString();
@@ -69,12 +88,15 @@ class _ListScreenState extends State<ListScreen> {
     }
   }
 
+  /// Fungsi saat salah satu FilterChip diklik oleh pengguna
   void _onFilterSelected(String author) {
     setState(() {
       _selectedAuthor = author;
       if (author == 'All') {
+        // Tampilkan semua data jika memilih 'All'
         _filteredArticles = _allArticles;
       } else {
+        // Filter data yang nama author-nya cocok dengan pilihan
         _filteredArticles = _allArticles
             .where((item) => item.authorFormatted == author)
             .toList();
@@ -82,6 +104,7 @@ class _ListScreenState extends State<ListScreen> {
     });
   }
 
+  /// Widget untuk menampilkan deretan FilterChip author secara horizontal
   Widget _buildFilterChips() {
     if (_authorList.length <= 1) return const SizedBox.shrink();
 
@@ -108,6 +131,7 @@ class _ListScreenState extends State<ListScreen> {
               ],
             ),
           ),
+          // Deretan FilterChip yang dapat digeser menyamping (horizontal scroll)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -142,6 +166,8 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
+  /// Widget thumbnail gambar lengkap dengan EXCEPTION HANDLING
+  /// Wajib sesuai soal: "memberikan exception handling apabila gambarnya tidak muncul"
   Widget _buildThumbnail(String imageUrl) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -151,8 +177,8 @@ class _ListScreenState extends State<ListScreen> {
         child: Image.network(
           imageUrl,
           fit: BoxFit.cover,
+          // errorBuilder dipanggil ketika URL gambar error/rusak/404
           errorBuilder: (context, error, stackTrace) {
-            // Exception handling apabila gambarnya tidak muncul
             return Container(
               width: 70,
               height: 70,
@@ -170,8 +196,9 @@ class _ListScreenState extends State<ListScreen> {
               ),
             );
           },
+          // loadingBuilder menampilkan animasi loading saat gambar sedang didownload
           loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
+            if (loadingProgress == null) return child; // Gambar sudah selesai dimuat
             return Container(
               width: 70,
               height: 70,
@@ -200,8 +227,10 @@ class _ListScreenState extends State<ListScreen> {
         foregroundColor: Colors.white,
       ),
       body: _isLoading
+          // Tampilkan progress indicator saat data sedang diambil
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
+              // Tampilkan pesan error jika request API gagal
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
@@ -228,7 +257,10 @@ class _ListScreenState extends State<ListScreen> {
                 )
               : Column(
                   children: [
+                    // Bagian FilterChip
                     _buildFilterChips(),
+
+                    // Bagian Daftar List Data
                     Expanded(
                       child: _filteredArticles.isEmpty
                           ? Center(
@@ -238,7 +270,7 @@ class _ListScreenState extends State<ListScreen> {
                               ),
                             )
                           : RefreshIndicator(
-                              onRefresh: _fetchData,
+                              onRefresh: _fetchData, // Fitur tarik ke bawah untuk refresh
                               child: ListView.builder(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -257,6 +289,7 @@ class _ListScreenState extends State<ListScreen> {
                                     ),
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(10),
+                                      // Navigasi ke Halaman Detail saat kartu diklik
                                       onTap: () {
                                         Navigator.push(
                                           context,
@@ -273,15 +306,17 @@ class _ListScreenState extends State<ListScreen> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            // 1. Gambar leading dengan Exception Handling
+                                            // 1. Gambar leading dengan exception handling
                                             _buildThumbnail(article.imageUrl),
                                             const SizedBox(width: 12),
-                                            // 2. Judul & Author
+
+                                            // 2. Kolom informasi: Judul, Author, dan Tanggal
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
+                                                  // Wajib: Menampilkan Judul
                                                   Text(
                                                     article.title,
                                                     maxLines: 2,
@@ -295,6 +330,8 @@ class _ListScreenState extends State<ListScreen> {
                                                     ),
                                                   ),
                                                   const SizedBox(height: 6),
+
+                                                  // Wajib: Menampilkan Author / Sumber
                                                   Row(
                                                     children: [
                                                       Icon(
@@ -323,6 +360,8 @@ class _ListScreenState extends State<ListScreen> {
                                                     ],
                                                   ),
                                                   const SizedBox(height: 4),
+
+                                                  // Tanggal publikasi terformat rapi
                                                   Text(
                                                     article
                                                         .publishedAtFormatted,
@@ -336,6 +375,8 @@ class _ListScreenState extends State<ListScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 8),
+
+                                            // Ikon navigasi ke kanan
                                             const Icon(
                                               Icons.chevron_right,
                                               color: Colors.black26,
@@ -354,4 +395,3 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 }
-
