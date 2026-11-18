@@ -45,3 +45,4 @@ class FavoriteService {
     return list;
   }
 }
+
