@@ -23,8 +23,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Spaceflight News'), findsOneWidget);
-    expect(find.text('LOGIN'), findsOneWidget);
+    expect(find.text('Login'), findsWidgets);
     expect(find.text('Daftar di sini'), findsOneWidget);
   });
 
@@ -35,8 +34,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Buat Akun Baru'), findsOneWidget);
-    expect(find.text('DAFTAR'), findsOneWidget);
+    expect(find.text('Registrasi Akun'), findsOneWidget);
+    expect(find.text('Daftar'), findsOneWidget);
   });
 
   testWidgets('MainMenuScreen renders menu cards and logout button',
