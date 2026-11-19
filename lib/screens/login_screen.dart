@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+
+import '../models/article_model.dart';
 import '../services/auth_service.dart';
 import 'main_menu_screen.dart';
-import 'register_screen.dart';
+
+//import 'register_screen.dart';
 
 /// Halaman Login Pengguna.
 /// Menggunakan `StatefulWidget` karena terdapat state lokal:
@@ -28,7 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.red, // Wajib merah sesuai instruksi modul & soal
+        backgroundColor:
+            Colors.red, // Wajib merah sesuai instruksi modul & soal
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -92,10 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Login'), centerTitle: true),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -147,29 +148,29 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
 
               // Navigasi menuju halaman Register jika belum memiliki akun
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Belum punya akun? '),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterScreen(),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      'Daftar di sini',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              //     const Text('Belum punya akun? '),
+              //     GestureDetector(
+              //       onTap: () {
+              //         Navigator.push(
+              //           context,
+              //           MaterialPageRoute(
+              //             builder: (context) => const RegisterScreen(),
+              //           ),
+              //         );
+              //       },
+              //       child: Text(
+              //         'Daftar di sini',
+              //         style: TextStyle(
+              //           color: Theme.of(context).colorScheme.primary,
+              //           fontWeight: FontWeight.bold,
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         ),

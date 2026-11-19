@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 
 /// Model data untuk menampung informasi News (Articles), Blogs, maupun Reports
 /// dari Spaceflight News API v4.
-/// 
+///
 /// Menggunakan model class memudahkan kita dalam memanipulasi data
 /// karena tipe data sudah pasti (type-safe) dan mencegah typo key JSON.
 class ArticleModel {
@@ -105,3 +105,17 @@ class ArticleModel {
     };
   }
 }
+
+// Model User untuk autentikasi.
+class User {
+  String username;
+  String password;
+
+  User({required this.username, required this.password});
+}
+
+// Data contoh user (tidak dipakai di alur utama, hanya referensi login).
+User user1 = User(username: 'justin', password: '074');
+
+// Nama pelanggan yang tampil di halaman Profil.
+const String customerName = 'Justin Muhammad Rasyid';
